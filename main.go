@@ -5,16 +5,29 @@ package main
  	"os"
 
 	 "github.com/urfave/cli"
+	 "xlsx2csv/config"
  )
 
  func transAction(file_name, new_name string) error {
-	 var err = fileCheck(file_name)
-	 if (err != nil) {
-		 return err
+	 var file_type, err = getFileType(file_name)
+	 if err != nil {
+	 	return err
 	 }
-	 transXlsx2Csv(file_name, new_name)
-	 return nil
+
+	 err = nil
+	 switch file_type {
+	 case config.FILE_TYPE_FILE:
+	 	err = transFile(file_name, new_name)
+	 	break
+	 case config.FILE_TYPE_DIR:
+	 	err = transDir(file_name, new_name)
+	 	break
+	 }
+
+	 return err
  }
+
+
 
  func argCheck(c *cli.Context) error {
 	 var arg_num = c.NArg()
@@ -23,6 +36,16 @@ package main
 	 	return errors.New(msg)
 	 }
 	 return nil
+ }
+
+ func transParams(client *cli.Context) (file_name, new_name string) {
+	var src_name = client.Args().Get(0)
+	var arg_num = client.NArg()
+	var dst_name = ""
+	if (arg_num == 2) {
+		dst_name = client.Args().Get(1)
+	}
+	return src_name, dst_name
  }
 
  func main() {
@@ -40,8 +63,7 @@ package main
 			fmt.Println(err)
 			return err
 		}
-		var file_name = c.Args().Get(0)
-		var new_name = c.Args().Get(1)
+		file_name, new_name := transParams(c)
 
 		err = transAction(file_name, new_name)
 		if err != nil {
